@@ -5,10 +5,10 @@ def create_population(population_size, chromosome_size):
     for i in range(population_size):
         chromosome = random.sample(range(1, chromosome_size+1), chromosome_size)
         population.append(chromosome)
-    print(population)
     return population
 
-# Geliştirilmiş fitness fonksiyonu
+# Fitness Fonksiyonu:
+# Yalnızca reçeteler arası geçiş süreleri dikkate alınır.
 def fitness(chromosome, prep_matrix):
     total_prep_time = 0
     for i in range(len(chromosome) - 1):
@@ -17,11 +17,10 @@ def fitness(chromosome, prep_matrix):
         total_prep_time += prep_matrix[current_job - 1][next_job - 1]
     return total_prep_time
 
-# Seçim işlemi
+# Seçim işlemi tamamen rastgele biçimde yapılır
 def selection(population):
     parent1 = random.choice(population)
     parent2 = random.choice(population)
-    print("p1: ", parent1, "p2: ", parent2)
     return parent1, parent2
 
 # PMX Çaprazlama İşlemi
@@ -30,6 +29,7 @@ def pmx_crossover(parent1, parent2, part_length):
     while True:
         crossover_point1 = random.randint(0, n-1)
         crossover_point2 = random.randint(0, n-1)
+        # Çaprazlama noktalarının aynı olmasını engelleyen kontrol mekanizması
         while crossover_point2 == crossover_point1:
             crossover_point2 = random.randint(0, n-1)
         if abs(crossover_point2 - crossover_point1) == part_length:
@@ -37,8 +37,6 @@ def pmx_crossover(parent1, parent2, part_length):
         
     if crossover_point1 > crossover_point2:
         crossover_point1, crossover_point2 = crossover_point2, crossover_point1
-        
-    print("cross.p1: ", crossover_point1, "cross.p2: ", crossover_point2)
 
     child1 = [-1] * n
     child2 = [-1] * n
@@ -72,15 +70,13 @@ def pmx_crossover(parent1, parent2, part_length):
     for i in range(n):
         if child2[i] == -1:
             child2[i] = parent1[i]
-    print("c1: ", child1, "c2: ", child2)
-    print("***************************")
     return child1, child2
 
 # Mutasyon işlemi
 def mutation(chromosome, mutation_rate):
-    for i in range(len(chromosome)):
-        if random.random() < mutation_rate:
-            chromosome[i] = 1 - chromosome[i]
+    if random.random() < mutation_rate:
+        i, j = random.sample(range(len(chromosome)), 2)
+        chromosome[i], chromosome[j] = chromosome[j], chromosome[i]
     return chromosome
 
 # Genetik algoritma
@@ -90,7 +86,8 @@ def genetic_algorithm(population_size, chromosome_size, generations, mutation_ra
     for generation in range(generations):
         new_population = []
 
-        # Elitizm
+        # Elitizm:  Popülasyonun fitness değerleri hesaplanır ve listede sıralanır.
+        #           Listede en üst sırada bulunan kromozom sonraki nesle direkt olarak aktarılır.
         population = sorted(population, key=lambda chromosome: fitness(chromosome, prep_matrix), reverse=False)
         new_population.append(population[0])
 
@@ -107,18 +104,20 @@ def genetic_algorithm(population_size, chromosome_size, generations, mutation_ra
         population = new_population
 
     # Sonuçları döndürme
-    population = sorted(population, key=lambda chromosome: fitness(chromosome, prep_matrix), reverse=True)
+    population = sorted(population, key=lambda chromosome: fitness(chromosome, prep_matrix), reverse=False)
     return population[0]
 
 # Kullanım örneği
-chromosome_size = 5
-prep_matrix = [[0, 1, 3, 2, 8], 
-               [1, 0, 5, 6, 7], 
-               [3, 5, 0, 4, 2],
-               [2, 6, 4, 0, 9],
-               [8, 7, 2, 9, 0]]
-#solution = [1]*chromosome_size
-result = genetic_algorithm(population_size=50, chromosome_size=chromosome_size, generations=50, mutation_rate=0.1, part_length=2)
+chromosome_size = 8
+prep_matrix = [[0, 8, 9, 10, 9, 10, 9, 9], 
+               [8, 0, 6, 9, 8, 8, 10, 6], 
+               [9, 6, 0, 10, 9, 9, 9, 8],
+               [10, 9, 10, 0, 5, 8, 8, 5],
+               [9, 8, 9, 5, 0, 10, 5, 10],
+               [10, 8, 9, 8, 10, 0, 8, 6],
+               [9, 10, 9, 8, 5, 8, 0, 5],
+               [9, 6, 8, 5, 10, 6, 5, 0]]
+result = genetic_algorithm(population_size=800, chromosome_size=chromosome_size, generations=1000, mutation_rate=0.1, part_length=4)
 
-#print("Hedef: ", solution)
 print("Bulunan: ", result)
+print("Elde edilen fitness değeri: ", fitness(result, prep_matrix))
